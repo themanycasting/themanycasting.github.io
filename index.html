@@ -82,6 +82,10 @@ a.ch.insta small{color:var(--accent-ink);opacity:.75}
 .mail small{font-size:12px;color:var(--muted)}
 .mail span{font-weight:600;overflow-wrap:anywhere;user-select:all}
 .mail button{flex:none;font:600 13px var(--f-body);padding:8px 12px;border-radius:10px;border:1px solid var(--accent);background:transparent;color:var(--accent);cursor:pointer}
+.mails{display:flex;flex-direction:column;gap:18px}
+.mailbox{display:flex;flex-direction:column;gap:8px}
+.mailbox h3{margin:0 2px;font-size:14px;font-weight:700;color:var(--ink)}
+.mailbox h3 small{display:block;font-size:12px;font-weight:400;color:var(--muted)}
 .webmail{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}
 .webmail a{display:flex;flex-direction:column;align-items:center;gap:1px;text-decoration:none;color:var(--ink);border:1px solid var(--line);border-radius:12px;padding:10px 4px;font-weight:600;font-size:14px;text-align:center}
 .webmail a small{font-weight:400;font-size:11px;color:var(--muted)}
@@ -121,11 +125,7 @@ footer{text-align:center;font-size:12px;color:var(--muted)}
   <section aria-labelledby="h-ch">
     <h2 id="h-ch"><span>문의하기<em class="en">Contact</em></span></h2>
     <div class="channels" id="channels"></div>
-    <div class="mail glass">
-      <div><small>이메일 주소 · Email</small><span id="mail-addr"></span></div>
-      <button type="button" id="copy-mail">주소 복사 · Copy</button>
-    </div>
-    <div class="webmail" id="webmail"></div>
+    <div class="mails" id="mails"></div>
   </section>
 
   <section aria-labelledby="h-closed" id="closed-sec">
@@ -151,7 +151,10 @@ const CHANNELS = [
   { label:"카카오 오픈채팅 · KakaoTalk", sub:"문의하기 · Chat with us", url:"https://open.kakao.com/o/sC7aAFSi", kakao:true },
   { label:"인스타그램 · Instagram", sub:"@the.many_casting", url:"https://www.instagram.com/the.many_casting/", insta:true },
 ];
-const EMAIL = "themanycasting@naver.com";
+const MAILS = [
+  { label:"문의 메일", sub:"Inquiries only", email:"themanycasting@naver.com", subject:"[문의 / Inquiry]" },
+  { label:"프로필 등록 메일", sub:"Profile submissions", email:"themanycasting@gmail.com", subject:"[프로필 등록 / Profile]" },
+];
 let WORKS = []; try { WORKS = JSON.parse(document.getElementById("works-data").textContent) || []; } catch(_) {}
 
 const $ = id => document.getElementById(id);
@@ -186,22 +189,28 @@ CHANNELS.forEach(c=>{
   a.innerHTML = "<span></span><small></small>"; a.querySelector("span").textContent = c.label; a.querySelector("small").textContent = c.sub || "";
   $("channels").appendChild(a);
 });
-$("mail-addr").textContent = EMAIL;
-$("copy-mail").addEventListener("click", e=>{
-  const btn = e.currentTarget;
-  const done = ()=>{ btn.textContent = "복사됨 · Copied"; setTimeout(()=>btn.textContent="주소 복사 · Copy",1800); };
-  const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents($("mail-addr")); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent="길게 눌러 복사 · Long-press to copy"; };
-  try { navigator.clipboard.writeText(EMAIL).then(done, fallback); } catch(_) { fallback(); }
-});
-const SUBJ = encodeURIComponent("[문의 및 프로필지원 / Inquiry & Profile]"), TO = encodeURIComponent(EMAIL);
-[
-  { label:"Gmail",    url:`https://mail.google.com/mail/?view=cm&fs=1&to=${TO}&su=${SUBJ}` },
-  { label:"네이버 · Naver", url:`https://mail.naver.com/write/popup?srvid=note&to=${TO}&subject=${SUBJ}` },
-  { label:"다음 · Daum",  url:`https://mail.daum.net/compose?to=${TO}&subject=${SUBJ}` },
-].forEach(m=>{
-  const a = document.createElement("a"); a.className="glass"; a.href = m.url; a.target = "_blank"; a.rel = "noopener";
-  a.innerHTML = "<span></span><small>메일 보내기 · Send</small>"; a.querySelector("span").textContent = m.label;
-  $("webmail").appendChild(a);
+MAILS.forEach(m=>{
+  const box = document.createElement("div"); box.className = "mailbox";
+  box.innerHTML = '<h3><span></span><small></small></h3><div class="mail glass"><div><small>이메일 주소 · Email</small><span class="addr"></span></div><button type="button">주소 복사 · Copy</button></div><div class="webmail"></div>';
+  box.querySelector("h3 span").textContent = m.label; box.querySelector("h3 small").textContent = m.sub;
+  const addr = box.querySelector(".addr"); addr.textContent = m.email;
+  const btn = box.querySelector("button");
+  btn.addEventListener("click", ()=>{
+    const done = ()=>{ btn.textContent = "복사됨 · Copied"; setTimeout(()=>btn.textContent="주소 복사 · Copy",1800); };
+    const fallback = ()=>{ const r=document.createRange(); r.selectNodeContents(addr); const s=getSelection(); s.removeAllRanges(); s.addRange(r); btn.textContent="길게 눌러 복사 · Long-press to copy"; };
+    try { navigator.clipboard.writeText(m.email).then(done, fallback); } catch(_) { fallback(); }
+  });
+  const SUBJ = encodeURIComponent(m.subject), TO = encodeURIComponent(m.email);
+  [
+    { label:"Gmail",    url:`https://mail.google.com/mail/?view=cm&fs=1&to=${TO}&su=${SUBJ}` },
+    { label:"네이버 · Naver", url:`https://mail.naver.com/write/popup?srvid=note&to=${TO}&subject=${SUBJ}` },
+    { label:"다음 · Daum",  url:`https://mail.daum.net/compose?to=${TO}&subject=${SUBJ}` },
+  ].forEach(w=>{
+    const a = document.createElement("a"); a.className="glass"; a.href = w.url; a.target = "_blank"; a.rel = "noopener";
+    a.innerHTML = "<span></span><small>메일 보내기 · Send</small>"; a.querySelector("span").textContent = w.label;
+    box.querySelector(".webmail").appendChild(a);
+  });
+  $("mails").appendChild(box);
 });
 
 /* ===== 참여 작품 피드 ===== */
